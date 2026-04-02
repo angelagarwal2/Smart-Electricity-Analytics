@@ -19,7 +19,7 @@ function App() {
     formData.append("file", file);
 
     try {
-      const response = await fetch('https://smart-electricity-analytics.onrender.com', {
+      const response = await fetch('https://smart-electricity-analytics.onrender.com/analyze-csv', {
         method: 'POST',
         body: formData,
       });
