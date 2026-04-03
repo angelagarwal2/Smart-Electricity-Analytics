@@ -243,18 +243,17 @@ export default function Dashboard({ data, onUpload, loading, onReset }) {
       {/* --- THE GHOST CANVAS (Hidden Document Chart) --- */}
       <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
         <div id="print-chart-container" style={{ width: '850px', height: '350px', backgroundColor: '#ffffff', padding: '10px' }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data.data}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eaeaea" />
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#666', fontSize: 13}} />
-              <YAxis axisLine={false} tickLine={false} tick={{fill: '#666', fontSize: 13}} />
-              <Bar dataKey="units" barSize={35} radius={[2, 2, 0, 0]}>
-                {data.data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.is_anomaly ? '#D96A45' : '#7A9B9E'} />
-                ))}
-              </Bar>
-            </ComposedChart>
-          </ResponsiveContainer>
+          {/* Removed ResponsiveContainer and hardcoded dimensions directly into ComposedChart */}
+          <ComposedChart width={830} height={330} data={data.data}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eaeaea" />
+            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#666', fontSize: 13}} />
+            <YAxis axisLine={false} tickLine={false} tick={{fill: '#666', fontSize: 13}} />
+            <Bar dataKey="units" barSize={35} radius={[2, 2, 0, 0]}>
+              {data.data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.is_anomaly ? '#D96A45' : '#7A9B9E'} />
+              ))}
+            </Bar>
+          </ComposedChart>
         </div>
       </div>
 
