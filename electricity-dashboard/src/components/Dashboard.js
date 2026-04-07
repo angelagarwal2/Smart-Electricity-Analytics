@@ -1,14 +1,18 @@
 import React from 'react';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { AlertTriangle, IndianRupee, TrendingUp, CheckCircle, CalendarClock, Lightbulb, Download, UploadCloud, Home } from 'lucide-react';
+import { Download, UploadCloud, Home } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 
+// Import our sub-components and the global CSS
+import KPICards from './KPICards';
+import AlertsSidebar from './AlertsSidebar';
+import '../App.css'; 
+
 export default function Dashboard({ data, onUpload, loading, onReset }) {
   const colors = { primary: '#2F5D62', secondary: '#A7C7C7', accent: '#F2A365', text: '#1E1E1E', bg: '#F7F9FB', red: '#e63946' };
 
-  // --- THE PREMIUM REPORT GENERATOR ---
   const generateProfessionalReport = async () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -70,7 +74,6 @@ export default function Dashboard({ data, onUpload, loading, onReset }) {
     // 5. Corporate Anomaly Table
     const tableData = data.data.filter(d => d.is_anomaly).map(item => {
       const deviation = (((item.actual_bill - item.expected_bill) / item.expected_bill) * 100).toFixed(0);
-      // FIXED ENCODING BUG HERE: Removed the emoji.
       return [item.month, `Rs. ${item.actual_bill}`, `Rs. ${item.expected_bill}`, `+${deviation}%`, "Overbilling Alert"];
     });
 
@@ -161,10 +164,10 @@ export default function Dashboard({ data, onUpload, loading, onReset }) {
     <div style={{ width: '100%', animation: 'fadeIn 0.5s ease-in' }}>
       
       {/* --- DASHBOARD UI HEADER --- */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+      <div className="dashboard-header">
         <h2 style={{ color: colors.primary, margin: 0 }}>Analytics Dashboard</h2>
         
-        <div style={{ display: 'flex', gap: '15px' }}>
+        <div className="header-actions">
           <button onClick={onReset} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '6px', border: `1px solid #ddd`, backgroundColor: '#fff', color: '#555', cursor: 'pointer', fontWeight: 'bold' }}>
             <Home size={18} /> Home
           </button>
@@ -172,27 +175,24 @@ export default function Dashboard({ data, onUpload, loading, onReset }) {
             <Download size={18} /> Export Pro Report
           </button>
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '6px', border: 'none', backgroundColor: colors.primary, color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>
-            <UploadCloud size={18} /> Upload New CSV
+            <UploadCloud size={18} />
+            {loading ? "Updating..." : "Upload New CSV"}
             <input type="file" accept=".csv" onChange={onUpload} style={{ display: 'none' }} />
           </label>
         </div>
       </div>
 
-      {/* --- DASHBOARD KPI CARDS --- */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '30px' }}>
-        <KPICard title="Avg. Monthly Usage" value={`${data.insights.average_monthly_units} kWh`} icon={<TrendingUp size={20} />} color={colors.secondary} />
-        <KPICard title="Anomalies Found" value={`${data.insights.anomalies_detected}`} icon={<AlertTriangle size={20} />} color={data.insights.anomalies_detected > 0 ? colors.accent : colors.secondary} />
-        <KPICard title="Potential Savings" value={`₹${data.insights.potential_savings}`} icon={<IndianRupee size={20} />} color={colors.primary} />
-        <KPICard title="Est. Next Bill" value={`₹${data.insights.next_month_prediction}`} icon={<CalendarClock size={20} />} color="#4a4a4a" />
-      </div>
+      {/* --- SUBCOMPONENTS --- */}
+      <KPICards data={data} colors={colors} />
 
-      {/* --- DASHBOARD MAIN CONTENT --- */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
+      <div className="main-content-grid">
         
-        {/* Interactive Chart */}
+        {/* Interactive UI Chart */}
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', minHeight: '400px' }}>
           <h3 style={{ marginTop: 0, marginBottom: '20px', color: colors.text }}>Historical Consumption Trends</h3>
-          <div style={{ height: '320px', width: '100%' }}>
+          
+          {/* ADDED STRICT MIN-WIDTH/HEIGHT TO SILENCE THE RECHARTS WARNING */}
+          <div style={{ height: '320px', width: '100%', minHeight: '320px', minWidth: '100%' }}>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={data.data}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
@@ -210,40 +210,14 @@ export default function Dashboard({ data, onUpload, loading, onReset }) {
           </div>
         </div>
 
-        {/* UI Alerts */}
-        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', maxHeight: '400px', overflowY: 'auto' }}>
-          <h3 style={{ marginTop: 0, marginBottom: '20px', color: colors.text }}>Diagnostic Alerts</h3>
-          {data.data.filter(d => d.is_anomaly).length === 0 ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'green', padding: '10px', backgroundColor: '#eaffea', borderRadius: '8px' }}>
-              <CheckCircle size={18} /> No overbilling detected.
-            </div>
-          ) : (
-            data.data.map((item, index) => {
-              if (!item.is_anomaly) return null;
-              return (
-                <div key={index} style={{ borderLeft: `4px solid ${colors.red}`, backgroundColor: '#fff8f8', padding: '15px', borderRadius: '6px', marginBottom: '15px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: colors.red, fontWeight: 'bold', marginBottom: '10px' }}>
-                    <AlertTriangle size={18} /> Alert: {item.month}
-                  </div>
-                  <div style={{ fontSize: '13px', color: '#444', display: 'flex', justifyContent: 'space-between', marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #fee2e2' }}>
-                    <span>Actual: <strong>₹{item.actual_bill}</strong></span>
-                    <span>Expected: ₹{item.expected_bill}</span>
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#555', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                    <Lightbulb size={14} color={colors.accent} style={{ flexShrink: 0, marginTop: '2px' }} />
-                    <i>{item.suggestion}</i>
-                  </div>
-                </div>
-              )
-            })
-          )}
-        </div>
+        {/* UI Alerts Component */}
+        <AlertsSidebar data={data} colors={colors} />
       </div>
 
-      {/* --- THE GHOST CANVAS (Hidden Document Chart) --- */}
+      {/* --- THE GHOST CANVAS (Hidden Document Chart for PDF generation) --- */}
+      {/* NO ResponsiveContainer used here to prevent render bugs during PDF capture */}
       <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
         <div id="print-chart-container" style={{ width: '850px', height: '350px', backgroundColor: '#ffffff', padding: '10px' }}>
-          {/* Removed ResponsiveContainer and hardcoded dimensions directly into ComposedChart */}
           <ComposedChart width={830} height={330} data={data.data}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eaeaea" />
             <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#666', fontSize: 13}} />
@@ -257,17 +231,6 @@ export default function Dashboard({ data, onUpload, loading, onReset }) {
         </div>
       </div>
 
-    </div>
-  );
-}
-
-function KPICard({ title, value, icon, color }) {
-  return (
-    <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', borderLeft: `5px solid ${color}`, boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#666', marginBottom: '8px', fontSize: '14px' }}>
-        {icon} <span>{title}</span>
-      </div>
-      <h2 style={{ margin: 0, fontSize: '22px', color: '#1E1E1E' }}>{value}</h2>
     </div>
   );
 }

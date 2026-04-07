@@ -19,6 +19,7 @@ function App() {
     formData.append("file", file);
 
     try {
+      // PROD URL: Ensure this perfectly matches your Render URL with /analyze-csv at the end
       const response = await fetch('https://smart-electricity-analytics.onrender.com/analyze-csv', {
         method: 'POST',
         body: formData,
@@ -41,13 +42,14 @@ function App() {
   return (
     <div style={{ backgroundColor: colors.bg, minHeight: '100vh', padding: '40px', fontFamily: 'system-ui, sans-serif', color: colors.text }}>
       
+      {/* Global Error Banner */}
       {error && (
-        <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '15px', borderRadius: '8px', marginBottom: '20px', textAlign: 'center' }}>
-          <strong>Error:</strong> {error}
+        <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '15px', borderRadius: '8px', marginBottom: '20px', textAlign: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+          <strong>System Error:</strong> {error}
         </div>
       )}
 
-      {/* Conditional Rendering: Show Landing Page if no data, else show Dashboard */}
+      {/* Conditional Rendering Logic */}
       {!data ? (
         <LandingPage handleFileUpload={handleFileUpload} loading={loading} />
       ) : (
